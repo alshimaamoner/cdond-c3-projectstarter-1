@@ -1,8 +1,8 @@
 ---
-- name: "upgrade packages."
+- name: "Add Node.js from Nodesource"
   become: true
-  apt:
-    upgrade: "yes"
+  shell: |
+    curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
 
 - name: "install dependencies."
   become: true
@@ -10,6 +10,11 @@
     name: ["nodejs", "npm"]
     state: latest
     update_cache: yes
+    
+- name: "upgrade packages."
+  become: true
+  apt:
+    upgrade: "yes"
 
 - name: "install pm2"
   become: true
@@ -18,3 +23,7 @@
     global: yes
     production: yes
     state: present
+
+
+
+
