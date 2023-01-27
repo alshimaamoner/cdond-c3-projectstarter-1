@@ -1,17 +1,20 @@
 ---
-- name: "Add Node.js from Nodesource"
-  become: true
-  shell: |
-    curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash -
-
-- name: "Install Node.js 19"
+- name: "upgrade packages."
   become: true
   apt:
-    name: ["node.js"]
-    state: latest
-    update_cache: yes   
+    upgrade: "yes"
 
-- name: "Install PM2 Globally"
+- name: "install dependencies."
+  become: true
+  apt:
+    name: ["nodejs", "npm"]
+    state: latest
+    update_cache: yes
+
+- name: "install pm2"
+  become: true
   npm:
     name: pm2
     global: yes
+    production: yes
+    state: present
