@@ -103,7 +103,13 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-scan]
+          keys: 
+            - front-deps-{{ checksum "frontend/package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: |   
+            cd backend
+            npm install     
       - run:
           name: Scan front-end
           command: |
@@ -120,7 +126,13 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-scan]
+          keys: 
+            - backend-deps-{{ checksum "backend/package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: |   
+            cd backend
+            npm install
       - run:
           name: Scan back-end
           command: |
