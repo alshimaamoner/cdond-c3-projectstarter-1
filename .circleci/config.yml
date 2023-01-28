@@ -277,15 +277,13 @@ jobs:
             npm install typescript
             npm run migrations > migration_status
       - run:
-          name: Send migration results to memstash
-          working_directory: ./backend
+          name: Send migration status to kvdb.io
           command: |  
-            cat ~/project/backend/migrations_dump.txt 
-            if grep -q "No migrations are pending" ~/project/backend/migrations_dump.txt
-            then
+              cat ~/project/backend/migrations_dump.txt 
+              if grep -q "No migrations are pending" ~/project/backend/migrations_dump.txt
+              then
                 curl -k https://kvdb.io/FBhp9QgWUKXo5X2kjQmmaV/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
-            fi
-            echo "WorkflowID=${CIRCLE_WORKFLOW_ID:0:7}"
+              fi
       # - revert-migrations:
       #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}      
       - destroy-environment:
