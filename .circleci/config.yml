@@ -203,19 +203,19 @@ jobs:
           fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
       - attach_workspace:
          at: ~/
-      # - run:
-      #     name: Install dependencies
-      #     command: |
-      #       apk add --update ansible tar gzip
-      #       pip3 install --upgrade pip
-      #       pip3 install --no-cache-dir awscli
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible tar gzip
+            pip3 install --upgrade pip
+            pip3 install --no-cache-dir awscli
       - run:
           name: Configure server
           command: |
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
-     # - destroy-environment
+      - destroy-environment
       # Here's where you will add some code to rollback on failure      
 
 #   run-migrations:
