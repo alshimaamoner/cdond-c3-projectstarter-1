@@ -188,7 +188,6 @@ jobs:
       - image: cimg/base:2023.01
     steps:
       - checkout
-      - install_awscli    
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -252,7 +251,6 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - install_awscli
       - attach_workspace:
           at: .
       - add_ssh_keys:
@@ -278,7 +276,6 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
-      - install_awscli
       - run:
           name: Run migrations
           command: |
