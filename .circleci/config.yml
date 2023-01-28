@@ -275,7 +275,7 @@ jobs:
           working_directory: ./backend
           command: |
             npm install typescript
-            npm run migrations > migration_status
+            npm run migrations > migrations_dump.txt
       - run:
           name: Send migration status to kvdb.io
           command: |  
