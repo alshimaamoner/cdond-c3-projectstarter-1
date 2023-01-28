@@ -104,7 +104,7 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-test
-                
+          
   test-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -121,6 +121,27 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-test
+
+  scan-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys: 
+            - front-deps-{{ checksum "frontend/package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: |   
+            cd backend
+            npm install      
+      - run:
+          name: Scan front-end
+          command: |
+            cd frontend
+            npm install oauth-sign@^0.9.0
+            npm audit fix --audit-level=critical 
+            #npm audit --audit-level=critical
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0
