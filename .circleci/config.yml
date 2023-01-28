@@ -239,7 +239,7 @@ jobs:
           ls -la
           cat inventory
           ansible-playbook -i inventory configure-server.yaml
-    - destroy_environment
+    - destroy-environment
 
 #   run-migrations:
 #     docker:
