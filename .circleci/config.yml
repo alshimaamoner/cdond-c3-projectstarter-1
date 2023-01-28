@@ -274,6 +274,7 @@ jobs:
           name: Run migrations
           working_directory: ./backend
           command: |
+            sudo chown -R $USER /usr/local/lib/node_modules
             npm install typescript -g
             npm run migrations > migration_status
       - run:
