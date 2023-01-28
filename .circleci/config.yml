@@ -297,12 +297,13 @@ jobs:
   #     - revert-migrations:
   #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}      
     run-migrations:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - attach_workspace:
+      docker:
+        - image: circleci/node:13.8.0
+      steps:
+        - checkout
+        - attach_workspace:
           at: ~/
-      - run:
+        - run:
           name: Install AWS CLI dependencies
           working_directory: /tmp
           command: |
@@ -316,7 +317,7 @@ jobs:
       #     command: |
       #       curl -sL https://rpm.nodesource.com/setup_12.x | bash -
       #       yum -y install nodejs npm tar gzip jq git
-      - run:
+        - run:
           name: Run migrations
           no_output_timeout: 20m
           working_directory: ./backend
@@ -338,7 +339,7 @@ jobs:
             cat migration.log
             migration_succesful=$(cat migration.log | grep -c "has been executed successfully")
             if [ $migration_succesful > 0 ]; then exit 0; else exit 1; fi;
-      - run:
+        - run:
           name: Send migration status to kvdb.io
           command: |  
               cat ~/project/backend/migrations_dump.txt 
@@ -350,9 +351,9 @@ jobs:
       # - run:
       #     name: Revert migrations
       #     when: on_fail
-      - revert-migrations:
+        - revert-migrations:
           workflowID: ${CIRCLE_WORKFLOW_ID:0:7}      
-      - destroy-environment:
+        - destroy-environment:
           workflowID: ${CIRCLE_WORKFLOW_ID:0:7}      
 #   deploy-frontend:
 #     docker:
