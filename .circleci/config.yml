@@ -135,29 +135,26 @@ jobs:
           command: |
             cd frontend
             npm install oauth-sign@^0.9.0
-            npm audit fix --audit-level=critical 
-            #npm audit --audit-level=critical
+            npm audit fix --audit-level=critical --force
+            #npm audit --audit-level=critical --force
   scan-backend:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: 
-            - backend-deps-{{ checksum "backend/package-lock.json" }}
-      - run:
-          name: Install dependencies
-          command: |   
-            cd backend
-            npm install
+          keys: [backend-deps]
       - run:
           name: Scan back-end
           command: |
             cd backend
             npm install
-            npm audit fix --force --audit-level=critical
-            npm audit fix --force --audit-level=critical
-            #npm audit --audit-level=critical
+            npm audit fix --audit-level=critical --force
+            npm audit fix --force
+            npm audit --audit-level=critical
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-deps
 
   deploy-infrastructure:
     docker:
@@ -352,8 +349,8 @@ workflows:
           filters:
             branches:
               only: [master]
-      # - configure-infrastructure:
-      #     requires: [deploy-infrastructure]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
       # - run-migrations:
       #     requires: [configure-infrastructure]
       # - deploy-frontend:
