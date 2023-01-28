@@ -58,6 +58,7 @@ commands:
           when: on_fail
           command: |
             aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.workflowID >>
+            
   revert-migrations:
     description: Revert the last migration
     parameters:
@@ -246,6 +247,39 @@ jobs:
             ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/configure-server.yml
       - destroy-environment:
           workflowID: ${CIRCLE_WORKFLOW_ID:0:7}  
+  run-migrations:
+    executor: node
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install AWS CLI dependencies
+          working_directory: /tmp
+          command: |
+            sudo apt-get update && sudo apt-get install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+      - run:
+          name: Run migrations
+          working_directory: ./backend
+          command: |
+            npm run migrations > migration_status
+      - run:
+          name: Send migration results to memstash
+          working_directory: ./backend
+          command: |  
+            cat ~/project/backend/migrations_dump.txt 
+            if grep -q "No migrations are pending" ~/project/backend/migrations_dump.txt
+            then
+                curl -k https://kvdb.io/FBhp9QgWUKXo5X2kjQmmaV/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            fi
+            echo "WorkflowID=${CIRCLE_WORKFLOW_ID:0:7}"
+      # - revert-migrations:
+      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}      
+      - destroy-environment:
+          workflowID: ${CIRCLE_WORKFLOW_ID:0:7}  
 
   # configure-infrastructure:
   #   docker:
@@ -320,40 +354,7 @@ jobs:
   #     - destroy-environment:
   #         workflowID: ${CIRCLE_WORKFLOW_ID:0:7}    
   #     - revert-migrations:
-  #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}      
-  run-migrations:
-    executor: node
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run:
-          name: Install AWS CLI dependencies
-          working_directory: /tmp
-          command: |
-            sudo apt-get update && sudo apt-get install -yy less
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-      - run:
-          name: Run migrations
-          working_directory: ./backend
-          command: |
-            npm run migrations > migration_status
-      - run:
-          name: Send migration results to memstash
-          working_directory: ./backend
-          command: |  
-            cat ~/project/backend/migrations_dump.txt 
-            if grep -q "No migrations are pending" ~/project/backend/migrations_dump.txt
-            then
-                curl -k https://kvdb.io/FBhp9QgWUKXo5X2kjQmmaV/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
-            fi
-            echo "WorkflowID=${CIRCLE_WORKFLOW_ID:0:7}"
-      # - revert-migrations:
-      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}      
-      - destroy-environment:
-          workflowID: ${CIRCLE_WORKFLOW_ID:0:7}                   
+  #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}                       
 #   deploy-frontend:
 #     docker:
 #       # Docker image here that supports AWS CLI
