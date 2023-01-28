@@ -218,28 +218,31 @@ jobs:
   #     - destroy-environment
   #     # Here's where you will add some code to rollback on failure  
   configure-infrastructure:
-    executor: python
+    docker:
+      # Docker image that supports Ansible
+      - image: python:3.7-alpine3.11
     steps:
-    - checkout
-    - add_ssh_keys:
-        fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
-    - attach_workspace:
-        at: .
-    - run:
-        name: Install dependencies
-        working_directory: ./.circleci/ansible
-        command: |
-         apk add --update ansible
-         ansible --version
-    - run:
-        name: Configure server
-        working_directory: ./.circleci/ansible
-        command: |
-          pwd &&
-          ls -la
-          cat inventory
-          ansible-playbook -i inventory configure-server.yaml
-    - destroy-environment
+      - checkout
+      - attach_workspace:
+          at: .
+      - add_ssh_keys:
+          fingerprints: 
+            - "e2:c9:22:04:6c:5c:91:d9:6b:fa:69:21:5b:be:a7:ad"
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            pip install awscli
+      - create-dotenv-file
+      - run:
+          name: Configure server
+          command: |
+            pwd
+            cat ./.circleci/ansible/inventory.txt
+            export ANSIBLE_HOST_KEY_CHECKING=false
+            ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/configure-server.yml
+      - destroy-environment:
+          workflowID: ${CIRCLE_WORKFLOW_ID:0:7}        
 
 #   run-migrations:
 #     docker:
