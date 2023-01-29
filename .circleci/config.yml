@@ -541,7 +541,7 @@ jobs:
           fingerprints:
             - "28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-deps]
       - attach_workspace:
           at: /tmp/artifacts
       - run:
