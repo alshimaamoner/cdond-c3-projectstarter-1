@@ -338,25 +338,33 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
-          at: .
+          at: ~/
+      - attach_workspace:
+          at: /tmp/workspace
       - restore_cache:
-          keys: [backend-build-cache]
+          key: backend-build
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible
-            apk add --no-cache curl
-            apk add --no-cache openssh-client
-            apk add --no-cache --upgrade bash
+            # your code here
+            apk add --update ansible openssh-client tar gzip curl nodejs npm
             pip install awscli
-      - create-dotenv-file
       - run:
           name: Deploy backend
+          no_output_timeout: 20m
           command: |
-            pwd
-            tar czf backend.tar.gz backend/
-            export ANSIBLE_HOST_KEY_CHECKING=false
-            ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/deploy-backend.yml -vvv
+            # your code here
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
