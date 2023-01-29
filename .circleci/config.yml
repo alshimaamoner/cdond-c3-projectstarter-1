@@ -502,7 +502,7 @@ jobs:
   deploy-backend:
     docker:
       # Docker image that supports Ansible
-      - image: cimg/base:stable
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
       - install_awscli
