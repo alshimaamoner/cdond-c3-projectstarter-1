@@ -499,48 +499,43 @@ jobs:
   #         workflowID: ${CIRCLE_WORKFLOW_ID:0:7}
   #     - revert-migrations:
   #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7} 
-  deploy-backend:
-    docker:
-      # Docker image that supports Ansible
-      - image: cimg/base:stable
-    steps:
-      - checkout
-      - install_awscli
-      - install_ansible
-      - install_nodejs
-      - add_ssh_keys:
-          fingerprints: 
-            - "28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"
-      - attach_workspace:
-          at: ~/
-      - restore_cache:
-          keys: [backend-deps]
-      - run:
+deploy-backend:
+  docker:
+    - image: python:3.7-alpine3.11
+  steps:
+    - checkout
+    - add_ssh_keys:
+        fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
+    - attach_workspace:
+        at: ~/          
+    - run:
           name: Install dependencies
+          working_directory: /tmp
           command: |
-            cd backend
-            npm install
-      - run:
-          name: Package Backend
+              apk add --update ansible curl rsync openssh nodejs npm
+              ansible --version
+              pip install awscli
+              aws --version
+    
+    - run:
+          name: Package, Deploy Backend and configure prometheus service discovery
           command: |
-            cd backend
-            npm run build
-            tar -czf artifact.tar.gz dist/* package*
-            cd ..
-            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
-      - run:
-          name: Deploy backend
-          command: |
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity.ts
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
-            cd .circleci/ansible
-            cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
-      - destroy-environment:
-          workflowID: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}  
+              cd backend
+              npm i
+              npm run build 
+              cd ..
+              tar -C backend -czvf artifact.tar.gz .
+              mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
+              mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
+              cd .circleci/ansible
+              echo "contents of the inventory.txt file is ------$(tail -i inventory.txt)"
+              cat inventory.txt
+              export ANSIBLE_HOST_KEY_CHECKING=False
+              ansible-playbook -i inventory.txt deploy-backend.yml
+    - destroy-environment:
+        workflowID: ${CIRCLE_WORKFLOW_ID:0:7}
+    - revert-migrations:
+        workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}  
 #   smoke-test:
 #     docker:
 #       # Lightweight Docker image 
