@@ -283,8 +283,6 @@ jobs:
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
-  # after run migrations jobs succeeds, now the destroy-environment command will need to be run
-  # in an image that supports nodejs 13
 
   deploy-frontend:
     docker:
@@ -331,23 +329,39 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - attach_workspace:
-          at: /tmp/artifacts
+          at: ~/
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Install dependencies
           command: |
-            apk update
-            apk add --update ansible aws-cli openssh-client tar
-
-      - run:
-          name: compress backend
-          command: |
-            tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
+            apk add --update ansible tar gzip nodejs npm
+            pip3 install --upgrade pip
+            pip3 install --no-cache-dir awscli
       - run:
           name: Deploy backend
           command: |
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+            mkdir -p .circleci/ansible/roles/deploy/files
+            echo NODE_ENV=production > .circleci/ansible/roles/deploy/files/.env
+            echo ENVIRONMENT=production >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_CONNECTION=postgres >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_ENTITIES='./dist/modules/domain/*/*/*.entity.js' >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_HOST=${TYPEORM_HOST} >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_PORT=${TYPEORM_PORT} >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_USERNAME=${TYPEORM_USERNAME} >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_PASSWORD=${TYPEORM_PASSWORD} >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_DATABASE=${TYPEORM_DATABASE} >> .circleci/ansible/roles/deploy/files/.env
+            ls .circleci/ansible/roles/deploy/files
             cd .circleci/ansible
-            export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook -i /tmp/artifacts/inventory.txt deploy-backend.yml
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID}"
 
