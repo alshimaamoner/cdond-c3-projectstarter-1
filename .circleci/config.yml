@@ -512,6 +512,7 @@ jobs:
             name: Install dependencies
             working_directory: /tmp
             command: |
+                sudo apt-get install npm
                 apk add --update ansible curl rsync openssh nodejs npm
                 ansible --version
                 pip install awscli
