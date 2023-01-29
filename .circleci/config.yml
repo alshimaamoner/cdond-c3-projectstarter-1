@@ -501,22 +501,23 @@ jobs:
   #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7} 
   deploy-backend:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/base:stable
     steps:
       - checkout
+      - install_awscli
+      - install_ansible
       - install_nodejs
       - add_ssh_keys:
           fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
       - attach_workspace:
           at: ~/          
+      - restore_cache:
+          keys: [backend-deps]
       - run:
             name: Install dependencies
             working_directory: /tmp
             command: |
                 apk add --update ansible curl rsync openssh nodejs npm
-                ansible --version
-                pip install awscli
-                aws --version
       
       - run:
             name: Package, Deploy Backend and configure prometheus service discovery
