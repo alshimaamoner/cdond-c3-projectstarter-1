@@ -166,10 +166,10 @@ jobs:
           key: backend-deps
   deploy-infrastructure:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:2023.01
     steps:
       - checkout
-      - install_awscli
+      - install_awscli    
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -199,27 +199,35 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy-environment
-
+      - destroy-environment:
+          workflowID: ${CIRCLE_WORKFLOW_ID:0:7}      
   configure-infrastructure:
     docker:
-      - image: cimg/base:stable
+      # Docker image that supports Ansible
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - install_awscli
-      - install_ansible
-      - add_ssh_keys:
-          fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
       - attach_workspace:
-          at: ~/
+          at: .
+      - add_ssh_keys:
+          fingerprints: 
+            - "28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"
       - run:
-          name: Configure Server
+          name: Install dependencies
           command: |
-            cd .circleci/ansible
-            cat inventory.txt
-            ansible-playbook -i inventory.txt configure-server.yml
-      - destroy-environment
-
+            apk add --update ansible
+            pip install awscli
+      - create-dotenv-file
+      - run:
+          name: Configure server
+          command: |
+            pwd
+            cat ./.circleci/ansible/inventory.txt
+            export ANSIBLE_HOST_KEY_CHECKING=false
+            ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/configure-server.yml
+      - destroy-environment:
+          workflowID: ${CIRCLE_WORKFLOW_ID:0:7}  
+          
   run-migrations:
     docker:
       - image: cimg/node:13.8.0
