@@ -333,45 +333,33 @@ jobs:
 
   deploy-backend:
     docker:
+      # Docker image that supports Ansible
       - image: python:3.7-alpine3.11
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
+          fingerprints: 
+            - "28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"
       - attach_workspace:
-          at: ~/
+          at: .
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-build-cache]
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible tar gzip nodejs npm
-            pip3 install --upgrade pip
-            pip3 install --no-cache-dir awscli
+            apk add --update ansible
+            apk add --no-cache curl
+            apk add --no-cache openssh-client
+            apk add --no-cache --upgrade bash
+            pip install awscli
+      - create-dotenv-file
       - run:
           name: Deploy backend
           command: |
-            cd backend
-            npm i
-            npm run build
-            cd ..
-            # Zip the directory
-            tar -C backend -czvf artifact.tar.gz .
-            # mkdir -p .circleci/ansible/roles/deploy/files
-            echo NODE_ENV=production > .circleci/ansible/roles/deploy/files/.env
-            echo ENVIRONMENT=production >> .circleci/ansible/roles/deploy/files/.env
-            echo TYPEORM_CONNECTION=postgres >> .circleci/ansible/roles/deploy/files/.env
-            echo TYPEORM_ENTITIES='./dist/modules/domain/*/*/*.entity.js' >> .circleci/ansible/roles/deploy/files/.env
-            echo TYPEORM_HOST=${TYPEORM_HOST} >> .circleci/ansible/roles/deploy/files/.env
-            echo TYPEORM_PORT=${TYPEORM_PORT} >> .circleci/ansible/roles/deploy/files/.env
-            echo TYPEORM_USERNAME=${TYPEORM_USERNAME} >> .circleci/ansible/roles/deploy/files/.env
-            echo TYPEORM_PASSWORD=${TYPEORM_PASSWORD} >> .circleci/ansible/roles/deploy/files/.env
-            echo TYPEORM_DATABASE=${TYPEORM_DATABASE} >> .circleci/ansible/roles/deploy/files/.env
-            ls .circleci/ansible/roles/deploy/files
-            cd .circleci/ansible
-            echo "Contents  of the inventory.txt file is -------"
-            cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
+            pwd
+            tar czf backend.tar.gz backend/
+            export ANSIBLE_HOST_KEY_CHECKING=false
+            ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/deploy-backend.yml -vvv
       - destroy-environment:
           workflowID: ${CIRCLE_WORKFLOW_ID:0:7}   
       - revert-migrations:
