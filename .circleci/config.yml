@@ -372,46 +372,94 @@ jobs:
   #         workflowID: ${CIRCLE_WORKFLOW_ID:0:7}    
   #     - revert-migrations:
   #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}                       
-  deploy-frontend:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout 
-      - install_awscli
-      - install_nodejs
-      - restore_cache:
-          keys: [frontend_deps]
-      - run:
-          name: Install dependencies
-          command: |
-            cd frontend
-            npm install
-      - run:
-          name: Get backend url
-          command: |
-            export BACKEND_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --output text)
+  # deploy-frontend:
+  #   docker:
+  #     - image: circleci/node:13.8.0
+  #   steps:
+  #     - checkout 
+  #     - install_awscli
+  #     - install_nodejs
+  #     - restore_cache:
+  #         keys: [frontend_deps]
+  #     - run:
+  #         name: Install dependencies
+  #         command: |
+  #           cd frontend
+  #           npm install
+  #     - run:
+  #         name: Get backend url
+  #         command: |
+  #           export BACKEND_IP=$(aws ec2 describe-instances \
+  #             --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+  #             --query 'Reservations[*].Instances[*].PublicIpAddress' \
+  #             --output text)
 
-            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
-            cat frontend/.env
-      - run:
-          name: Deploy frontend objects
-          command: |
-            cd frontend
-            npm install
-            npm run build
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - destroy-environment:
-         workflowID: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7} 
+  #           echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+  #           cat frontend/.env
+  #     - run:
+  #         name: Deploy frontend objects
+  #         command: |
+  #           cd frontend
+  #           npm install
+  #           npm run build
+  #           aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+  #     - destroy-environment:
+  #        workflowID: ${CIRCLE_WORKFLOW_ID:0:7}
+  #     - revert-migrations:
+  #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7} 
+  # # deploy-backend:
+  # #   docker:
+  # #     - image: python:3.7-alpine3.11
+  # #   steps:
+  # #     - checkout
+  # #     - add_ssh_keys:
+  # #         fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
+  # #     - attach_workspace:
+  # #         at: ~/
+  # #     - restore_cache:
+  # #         keys: [backend-deps]
+  # #     - run:
+  # #         name: Install dependencies
+  # #         command: |
+  # #           apk add --update ansible tar gzip nodejs npm
+  # #           pip3 install --upgrade pip
+  # #           pip3 install --no-cache-dir awscli
+  # #     - run:
+  # #         name: Deploy backend
+  # #         command: |
+  # #           cd backend
+  # #           npm i
+  # #           npm run build
+  # #           cd ..
+  # #           # Zip the directory
+  # #           tar -C backend -czvf artifact.tar.gz .
+  # #           mkdir -p .circleci/ansible/roles/deploy/files
+  # #           echo NODE_ENV=production > .circleci/ansible/roles/deploy/files/.env
+  # #           echo ENVIRONMENT=production >> .circleci/ansible/roles/deploy/files/.env
+  # #           echo TYPEORM_CONNECTION=postgres >> .circleci/ansible/roles/deploy/files/.env
+  # #           echo TYPEORM_ENTITIES='./dist/modules/domain/*/*/*.entity.js' >> .circleci/ansible/roles/deploy/files/.env
+  # #           echo TYPEORM_HOST=${TYPEORM_HOST} >> .circleci/ansible/roles/deploy/files/.env
+  # #           echo TYPEORM_PORT=${TYPEORM_PORT} >> .circleci/ansible/roles/deploy/files/.env
+  # #           echo TYPEORM_USERNAME=${TYPEORM_USERNAME} >> .circleci/ansible/roles/deploy/files/.env
+  # #           echo TYPEORM_PASSWORD=${TYPEORM_PASSWORD} >> .circleci/ansible/roles/deploy/files/.env
+  # #           echo TYPEORM_DATABASE=${TYPEORM_DATABASE} >> .circleci/ansible/roles/deploy/files/.env
+  # #           ls .circleci/ansible/roles/deploy/files
+  # #           cd .circleci/ansible
+  # #           echo "Contents  of the inventory.txt file is -------"
+  # #           cat inventory.txt
+  # #           ansible-playbook -i inventory.txt deploy-backend.yml
+  # #     - destroy-environment:
+  # #         workflowID: ${CIRCLE_WORKFLOW_ID:0:7}                    
+  # #     - revert-migrations:
+  # #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}                    
   # deploy-backend:
   #   docker:
   #     - image: python:3.7-alpine3.11
   #   steps:
   #     - checkout
+  #     - install_awscli
+  #     - install_ansible
+  #     - install_nodejs
   #     - add_ssh_keys:
   #         fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
   #     - attach_workspace:
@@ -421,71 +469,23 @@ jobs:
   #     - run:
   #         name: Install dependencies
   #         command: |
-  #           apk add --update ansible tar gzip nodejs npm
-  #           pip3 install --upgrade pip
-  #           pip3 install --no-cache-dir awscli
+  #           cd backend 
+  #           npm install
   #     - run:
-  #         name: Deploy backend
+  #         name: Package backend
   #         command: |
   #           cd backend
-  #           npm i
   #           npm run build
-  #           cd ..
-  #           # Zip the directory
-  #           tar -C backend -czvf artifact.tar.gz .
-  #           mkdir -p .circleci/ansible/roles/deploy/files
-  #           echo NODE_ENV=production > .circleci/ansible/roles/deploy/files/.env
-  #           echo ENVIRONMENT=production >> .circleci/ansible/roles/deploy/files/.env
-  #           echo TYPEORM_CONNECTION=postgres >> .circleci/ansible/roles/deploy/files/.env
-  #           echo TYPEORM_ENTITIES='./dist/modules/domain/*/*/*.entity.js' >> .circleci/ansible/roles/deploy/files/.env
-  #           echo TYPEORM_HOST=${TYPEORM_HOST} >> .circleci/ansible/roles/deploy/files/.env
-  #           echo TYPEORM_PORT=${TYPEORM_PORT} >> .circleci/ansible/roles/deploy/files/.env
-  #           echo TYPEORM_USERNAME=${TYPEORM_USERNAME} >> .circleci/ansible/roles/deploy/files/.env
-  #           echo TYPEORM_PASSWORD=${TYPEORM_PASSWORD} >> .circleci/ansible/roles/deploy/files/.env
-  #           echo TYPEORM_DATABASE=${TYPEORM_DATABASE} >> .circleci/ansible/roles/deploy/files/.env
-  #           ls .circleci/ansible/roles/deploy/files
-  #           cd .circleci/ansible
-  #           echo "Contents  of the inventory.txt file is -------"
-  #           cat inventory.txt
-  #           ansible-playbook -i inventory.txt deploy-backend.yml
-  #     - destroy-environment:
-  #         workflowID: ${CIRCLE_WORKFLOW_ID:0:7}                    
-  #     - revert-migrations:
-  #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}                    
-  deploy-backend:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - install_awscli
-      - install_ansible
-      - install_nodejs
-      - add_ssh_keys:
-          fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
-      - attach_workspace:
-          at: ~/
-      - restore_cache:
-          keys: [backend-deps]
-      - run:
-          name: Install dependencies
-          command: |
-            cd backend 
-            npm install
-      - run:
-          name: Package backend
-          command: |
-            cd backend
-            npm run build
-            tar -czf artifact.tar.gz dist/* package*
+  #           tar -czf artifact.tar.gz dist/* package*
 
-            cd ..
-            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
-      - run:  
-          name: Deploy backend
-          command: |    
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
+  #           cd ..
+  #           cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+  #     - run:  
+  #         name: Deploy backend
+  #         command: |    
+  #           export TYPEORM_MIGRATIONS_DIR=./migrations
+  #           export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+  #           export TYPEORM_MIGRATIONS=./migrations/*.ts
 
   #           cd .circleci/ansible
   #           cat inventory.txt
@@ -526,7 +526,85 @@ jobs:
   #     - destroy-environment:
   #         workflowID: ${CIRCLE_WORKFLOW_ID:0:7}
   #     - revert-migrations:
-  #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}  
+  #         workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+    deploy-frontend:
+      docker:
+        - image: amazon/aws-cli
+      steps:
+        - checkout
+        - run:
+          name: Install dependencies
+          command: |
+            yum install -y tar gzip ansible
+            curl -sL https://rpm.nodesource.com/setup_10.x | bash -
+            yum install -y nodejs
+        - run:
+          name: Get backend url
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d '"')
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
+        - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            npm install
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+        - destroy-environment:
+          workflowID: ${CIRCLE_WORKFLOW_ID:0:7}      
+        - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+    deploy-backend:
+      docker:
+        - image: python:3.7-alpine3.11
+      steps:
+        - checkout
+        - add_ssh_keys:
+          fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
+        - attach_workspace:
+          at: ~/
+        - restore_cache:
+          keys: [backend-build]
+        - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible tar gzip nodejs npm
+            pip3 install --upgrade pip
+            pip3 install --no-cache-dir awscli
+        - run:
+          name: Deploy backend
+          command: |
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+            mkdir -p .circleci/ansible/roles/deploy/files
+            echo NODE_ENV=production > .circleci/ansible/roles/deploy/files/.env
+            echo ENVIRONMENT=production >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_CONNECTION=postgres >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_ENTITIES='./dist/modules/domain/*/*/*.entity.js' >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_HOST=${TYPEORM_HOST} >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_PORT=${TYPEORM_PORT} >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_USERNAME=${TYPEORM_USERNAME} >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_PASSWORD=${TYPEORM_PASSWORD} >> .circleci/ansible/roles/deploy/files/.env
+            echo TYPEORM_DATABASE=${TYPEORM_DATABASE} >> .circleci/ansible/roles/deploy/files/.env
+            ls .circleci/ansible/roles/deploy/files
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+        - destroy-environment:
+          workflowID: ${CIRCLE_WORKFLOW_ID:0:7}   
+        - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}  
 #   smoke-test:
 #     docker:
 #       # Lightweight Docker image 
