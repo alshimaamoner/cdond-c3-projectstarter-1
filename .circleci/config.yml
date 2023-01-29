@@ -126,7 +126,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |   
-            cd frontend
+            cd backend
             npm install      
       - run:
           name: Scan front-end
@@ -139,23 +139,17 @@ jobs:
   scan-backend:
     docker:
       - image: circleci/node:13.8.0
-    steps:  
+    steps:
+      - checkout
       - restore_cache:
-          keys: 
-            - backend-build
+          keys: [backend-build]
       - run:
-          name: Install dependencies
-          command: |   
-            cd backend
-            npm install
-      - run:
-          name: Scan back-end
+          name: backend scan
           command: |
             cd backend
-            npm install
             npm audit fix --force --audit-level=critical
             npm audit fix --force --audit-level=critical
-            #npm audit --audit-level=critical
+
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
