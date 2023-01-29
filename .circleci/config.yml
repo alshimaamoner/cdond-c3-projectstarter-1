@@ -356,7 +356,7 @@ jobs:
             cd ..
             # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
-            mkdir -p .circleci/ansible/roles/deploy/files
+            # mkdir -p .circleci/ansible/roles/deploy/files
             echo NODE_ENV=production > .circleci/ansible/roles/deploy/files/.env
             echo ENVIRONMENT=production >> .circleci/ansible/roles/deploy/files/.env
             echo TYPEORM_CONNECTION=postgres >> .circleci/ansible/roles/deploy/files/.env
