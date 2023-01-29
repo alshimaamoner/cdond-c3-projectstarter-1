@@ -139,16 +139,23 @@ jobs:
   scan-backend:
     docker:
       - image: circleci/node:13.8.0
-    steps:
-      - checkout
+    steps:  
       - restore_cache:
-          keys: [backend-build]
+          keys: 
+            - backend-deps-{{ checksum "backend/package-lock.json" }}
       - run:
-          name: backend scan
+          name: Install dependencies
+          command: |   
+            cd backend
+            npm install
+      - run:
+          name: Scan back-end
           command: |
             cd backend
-            npm audit --audit-level=critical
-
+            npm install
+            npm audit fix --force --audit-level=critical
+            npm audit fix --force --audit-level=critical
+            #npm audit --audit-level=critical
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
