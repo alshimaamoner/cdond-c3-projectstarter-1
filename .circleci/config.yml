@@ -180,26 +180,31 @@ jobs:
 
   deploy-infrastructure:
     docker:
+      # Docker image that supports AWS CLI
       - image: amazon/aws-cli
     steps:
       - checkout
-      - install_awscli    
       - run:
-          name: Ensure back-end infrastructure exists
+          name: Install tar and zip utilities
+          command: yum -y install tar gzip
+      - run:
+          name: Ensure backend infrastructure exists
           command: |
+            pwd
             aws cloudformation deploy \
-              --template-file .circleci/files/backend.yml \
-              --tags project=udapeople \
+              --template-file ./.circleci/files/backend.yml \
+              --tags project=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
-          name: Ensure front-end infrastructure exist
+          name: Ensure frontend infrastructure exist
           command: |
+            pwd
             aws cloudformation deploy \
-              --template-file .circleci/files/frontend.yml \
-              --tags project=udapeople \
+              --template-file ./.circleci/files/frontend.yml \
+              --tags project=udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" 
       - run:
           name: Add back-end ip to ansible inventory
           command: |
