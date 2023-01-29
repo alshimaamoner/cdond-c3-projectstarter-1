@@ -291,30 +291,32 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - restore_cache:
-          keys: [frontend-build]
       - run:
           name: Install dependencies
           command: |
-            yum install -y curl tar sudo
-            curl -sL https://rpm.nodesource.com/setup_13.x | sudo bash -
+            yum install -y tar gzip ansible
+            curl -sL https://rpm.nodesource.com/setup_10.x | bash -
             yum install -y nodejs
-            node --version
       - run:
           name: Get backend url
           command: |
-            export API_URL=$(curl --insecure  https://kvdb.io/MJ9xRzcR82e6NKBRHirxyM)
-            export API_URL="http://${API_URL}:3030"
-            echo "${API_URL}" > .circleci/api_url.txt
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d '"')
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
       - run:
           name: Deploy frontend objects
           command: |
-            export API_URL=$(cat .circleci/api_url.txt)
-            echo "${API_URL}" > frontend/.env
             cd frontend
-            npm i
+            npm install
             npm run build
-            aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --recursive
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID}
 
