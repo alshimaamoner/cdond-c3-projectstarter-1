@@ -142,7 +142,7 @@ jobs:
     steps:  
       - restore_cache:
           keys: 
-            - backend-build-{{ checksum "backend/package-lock.json" }}
+            - backend-build
       - run:
           name: Install dependencies
           command: |   
