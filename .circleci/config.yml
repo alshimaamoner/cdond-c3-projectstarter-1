@@ -186,12 +186,11 @@ jobs:
 
       - destroy-environment
 
-  configure-infrastructure:
+  configure-infrastructure: 
     docker:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - aws-cli/setup
       - add_ssh_keys:
           fingerprints: ["28:db:40:89:33:75:b4:d7:02:cf:63:b6:5c:86:7c:53"]
       - attach_workspace:
@@ -214,7 +213,6 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt node-exporter.yml
       - destroy-environment 
-
   run-migrations:
     docker:
       - image: circleci/node:13.8.0
